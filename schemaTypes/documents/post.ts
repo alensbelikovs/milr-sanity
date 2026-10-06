@@ -8,8 +8,8 @@ export const post = defineType({
   icon: DocumentTextIcon,
   fields: [
     defineField({
-      name: 'media',
-      title: 'Media',
+      name: 'img',
+      title: 'Image',
       type: 'media',
       validation: (rule) => rule.required(),
     }),
@@ -51,7 +51,7 @@ export const post = defineType({
     },
   ],
   preview: {
-    select: {title: 'title', createdAt: '_createdAt', media: 'media'},
+    select: {title: 'title', createdAt: '_createdAt', media: 'img'},
     prepare({title, createdAt, media}) {
       return {title, subtitle: createdAt?.slice(0, 10), media}
     },

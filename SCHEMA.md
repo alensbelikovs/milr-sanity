@@ -46,9 +46,10 @@ still references it. In particular, a `solution` cannot be deleted while any wor
 
 ### `media` — the one image type
 
-All images (`work.img`, `work.gallery[]`, `post.media`, `solution.media`,
-`generalInformation.cover`) use the shared `media` object, so hotspot support and the `alt` field
-are defined exactly once in [`schemaTypes/objects/media.ts`](schemaTypes/objects/media.ts).
+All images (`work.img`, `work.gallery[]`, `post.img`, `solution.img`, `generalInformation.img`)
+use the shared `media` object, so hotspot support and the `alt` field are defined exactly once in
+[`schemaTypes/objects/media.ts`](schemaTypes/objects/media.ts). Every single-image field is named
+`img`.
 
 | Field | Type     | Required | Notes                                               |
 | ----- | -------- | -------- | --------------------------------------------------- |
@@ -67,8 +68,8 @@ a plain Sanity `image` underneath, so it works directly with `@sanity/image-url`
 
 ### Generated slugs
 
-`work.slug` and `sector.slug` both use Sanity's built-in `slug` type
-with `options: {source: 'title', maxLength: 96}`. The editor presses **Generate** and the value is
+`work.slug`, `solution.slug`, and `sector.slug` all use Sanity's built-in `slug` type with
+`options: {source: 'title', maxLength: 96}`. The editor presses **Generate** and the value is
 derived from that document's `title`.
 
 Sanity's default slugify lowercases and hyphenates but does **not** fold diacritics, so "Kārlis
@@ -118,28 +119,32 @@ cards).
 | Field         | Type                                | Required | Notes                                 |
 | ------------- | ----------------------------------- | -------- | ------------------------------------- |
 | `title`       | `string`                            | yes      |                                       |
+| `subtitle`    | `string`                            | yes      |                                       |
 | `slug`        | `slug`                              | yes      | Generated from `title` (max 96 chars) |
-| `featured`    | `boolean`                           | no       | Defaults to `false` on new works      |
+| `featured`    | `boolean`                           | yes      | Defaults to `false` on new works      |
 | `img`         | `media`                             | yes      | Lead image                            |
 | `sector`      | `array` of `reference` → `sector`   | no       | Unique                                |
 | `solutions`   | `array` of `reference` → `solution` | no       | Unique                                |
-| `location`    | `object`                            | no       | `{city, country}`, both optional      |
+| `location`    | `object`                            | no       | `{city, country}`, both required      |
 | `area`        | `number`                            | no       | Floor area in m², positive            |
 | `testimonial` | `reference` → `testimonial`         | no       |                                       |
 | `gallery`     | `array` of `media`                  | no       |                                       |
 | `description` | `text`                              | yes      | 8 rows                                |
 | `_createdAt`  | system                              | auto     | Set by Sanity                         |
 
-Everything except `title`, `slug`, `img`, and `description` is optional, so treat every other field
-as possibly absent. The Studio unsets empty arrays, so an empty `sector`, `solutions`, or `gallery`
-comes back missing rather than `[]`.
+Everything except `title`, `subtitle`, `slug`, `featured`, `img`, and `description` is optional, so
+treat every other field as possibly absent. The Studio unsets empty arrays, so an empty `sector`,
+`solutions`, or `gallery` comes back missing rather than `[]`.
 
-`featured` flags any number of works. New works start at `false`, but works created before the
-field existed have no value at all, so filter with `featured == true` rather than
-`featured != false`.
+Required fields are enforced on publish, not backfilled: works published before `subtitle` or
+`featured` existed have no value for them until an editor republishes. Fall back accordingly, and
+filter with `featured == true` rather than `featured != false`.
+
+`featured` flags any number of works; new works start at `false`.
 
 `location` is an inline object rather than a reference because a city/country pair is not shared or
-separately editable; if the editor fills in neither half the whole object is unset, so guard the
+separately editable. The object itself is optional, but once it is filled in both `city` and
+`country` are required. If the editor leaves it empty the whole object is unset, so guard the
 parent before reading `city` or `country`.
 
 ```tsx
@@ -158,7 +163,7 @@ Preview title is `title`, subtitle the first `sector`.
 
 | Field         | Type     | Required | Notes               |
 | ------------- | -------- | -------- | ------------------- |
-| `media`       | `media`  | yes      |                     |
+| `img`         | `media`  | yes      |                     |
 | `title`       | `string` | yes      |                     |
 | `description` | `text`   | yes      | 5 rows              |
 | `url`         | `url`    | yes      | `http`/`https` only |
@@ -168,15 +173,16 @@ A post is a link-out card: it has no slug and no page of its own.
 
 ## `solution` (document)
 
-| Field         | Type     | Required | Notes  |
-| ------------- | -------- | -------- | ------ |
-| `media`       | `media`  | yes      |        |
-| `title`       | `string` | yes      |        |
-| `description` | `text`   | yes      | 5 rows |
+| Field         | Type     | Required | Notes                                 |
+| ------------- | -------- | -------- | ------------------------------------- |
+| `img`         | `media`  | yes      |                                       |
+| `title`       | `string` | yes      |                                       |
+| `slug`        | `slug`   | yes      | Generated from `title` (max 96 chars) |
+| `description` | `text`   | yes      | 5 rows                                |
 
 Solutions are a shared vocabulary: each one is written once and referenced by any number of works
 through `work.solutions`. The same list doubles as the site-wide "what we do" section, which is why a
-solution carries its own `media` and `description` rather than being a bare label.
+solution carries its own `img` and `description` rather than being a bare label.
 
 ## `sector` (document)
 
@@ -196,7 +202,7 @@ up by the `sector` type until they are migrated.
 | ------------- | -------- | -------- | --------------------------------------- |
 | `author`      | `string` | yes      | Who is speaking, e.g. "Kārlis and Līga" |
 | `description` | `string` | yes      | The clause after the comma              |
-| `testimonial` | `text`   | yes      | The quote itself, 5 rows                |
+| `text`        | `text`   | yes      | The quote itself, 5 rows                |
 
 `author` and `description` are the two halves of a single attribution line, split so the frontend
 can style them independently:
@@ -215,7 +221,7 @@ Document id: `generalInformation`. See [Singletons](#singletons).
 
 | Field     | Type                    | Required | Notes                             |
 | --------- | ----------------------- | -------- | --------------------------------- |
-| `cover`   | `media`                 | yes      |                                   |
+| `img`     | `media`                 | yes      |                                   |
 | `email`   | `string`                | yes      | Validated as an email             |
 | `phone`   | `string`                | yes      | Free text, e.g. `+371 20 123 456` |
 | `socials` | `array` of `socialLink` | yes      | At least one                      |
@@ -227,7 +233,7 @@ Document id: `generalInformation`. See [Singletons](#singletons).
 `tel:` href.
 
 In the Studio the fields are split into three tabs: **Contact** (`email`, `phone`, `socials`),
-**Location** (`hours`, `address`), and **Media** (`cover`).
+**Location** (`hours`, `address`), and **Media** (`img`).
 
 ### `socialLink` (object)
 
@@ -270,6 +276,7 @@ them to whatever casing or language the frontend prints. A new singleton starts 
   _id,
   _createdAt,
   title,
+  subtitle,
   slug,
   featured,
   img,
@@ -277,8 +284,14 @@ them to whatever casing or language the frontend prints. A new singleton starts 
   // _key identifies the array item and does not survive the ->, so each item is projected and
   // dereferenced in the same step rather than followed with sector[]->{...}.
   sector[]{_key, "title": @->title, "slug": @->slug},
-  solutions[]{_key, "title": @->title, "description": @->description, "media": @->media},
-  testimonial->{author, description, testimonial},
+  solutions[]{
+    _key,
+    "title": @->title,
+    "slug": @->slug,
+    "description": @->description,
+    "img": @->img
+  },
+  testimonial->{author, description, text},
   location,
   area,
   gallery[]{
@@ -305,7 +318,7 @@ them to whatever casing or language the frontend prints. A new singleton starts 
 
 // Site-wide details
 *[_id == "generalInformation"][0]{
-  cover,
+  img,
   email,
   phone,
   socials[]{_key, title, url},
