@@ -16,10 +16,12 @@ Registered in [`schemaTypes/index.ts`](schemaTypes/index.ts) and wired into the 
 | `sector`             | document  | Taxonomy: what sector the work sits in           |
 | `testimonial`        | document  | A reusable quote from a client                   |
 | `generalInformation` | singleton | Site-wide contact, hours, address, socials       |
+| `cookiesPrivacy`     | singleton | The cookies & privacy page                       |
 | `media`              | object    | Shared image type (hotspot + `alt`)              |
 | `socialLink`         | object    | `{title, url}` pair used by `generalInformation` |
 | `openingHours`       | object    | Day range + time range                           |
 | `address`            | object    | Postal address                                   |
+| `policyText`         | array     | Restricted rich text: paragraphs, h5, links      |
 
 ## Relationships
 
@@ -66,11 +68,49 @@ rather than printing `undefined`:
 Because it is a named type, array members come back as `_type: "media"`, not `_type: "image"`. It is
 a plain Sanity `image` underneath, so it works directly with `@sanity/image-url`.
 
+### Translated fields
+
+Text shown on the site is stored per language (`en`, `lv`) with
+[`sanity-plugin-internationalized-array`](https://github.com/sanity-io/plugins/tree/main/plugins/sanity-plugin-internationalized-array):
+`internationalizedArrayString` / `internationalizedArrayText` instead of `string` / `text`.
+
+| Type                 | Translated fields                                                  |
+| -------------------- | ------------------------------------------------------------------ |
+| `work`               | `title`, `subtitle`, `description`, `location.city`, `location.country` |
+| `post`               | `title`                                                            |
+| `solution`           | `title`, `description`                                             |
+| `sector`             | `title`                                                            |
+| `testimonial`        | `author`, `description`, `text`                                    |
+| `address`            | `city`, `country`                                                  |
+| `media`              | `alt`                                                              |
+| `cookiesPrivacy`     | `body`                                                             |
+
+Slugs, images, references, numbers and social names are shared. Each
+field holds one item per language:
+
+```json
+"title": [
+  {"_key": "…", "_type": "internationalizedArrayStringValue", "language": "en", "value": "Kitchen"},
+  {"_key": "…", "_type": "internationalizedArrayStringValue", "language": "lv", "value": "Virtuve"}
+]
+```
+
+Query a language with a fallback to English:
+
+```groq
+"title": coalesce(title[language == $lang][0].value, title[language == "en"][0].value)
+```
+
+Existing plain strings are moved over by `migrations/localize-fields`
+(`npx sanity migration run localize-fields`, a dry run unless given `--no-dry-run`). The per-type
+tables below still list the field's content type.
+
 ### Generated slugs
 
 `work.slug`, `solution.slug`, and `sector.slug` all use Sanity's built-in `slug` type with
-`options: {source: 'title', maxLength: 96}`. The editor presses **Generate** and the value is
-derived from that document's `title`.
+`options: {source: englishSource('title'), maxLength: 96}`. The editor presses **Generate** and the
+value is derived from that document's English `title`. Slugs are shared by both languages, so the
+site's URLs differ only by the `/en` or `/lv` prefix.
 
 Sanity's default slugify lowercases and hyphenates but does **not** fold diacritics, so "Kārlis
 Villa" becomes `kārlis-villa` rather than `karlis-villa`. Percent-encode when building URLs, or add
@@ -93,7 +133,7 @@ first".
 
 ### Singletons
 
-There is no `singleton: true` schema option. `generalInformation` is a singleton because of two
+There is no `singleton: true` schema option. `generalInformation` and `cookiesPrivacy` are singletons because of two
 pieces of configuration, both driven by the `SINGLETONS` list in
 [`structure/index.ts`](structure/index.ts):
 
@@ -161,13 +201,12 @@ Preview title is `title`, subtitle the first `sector`.
 
 ## `post` (document)
 
-| Field         | Type     | Required | Notes               |
-| ------------- | -------- | -------- | ------------------- |
-| `img`         | `media`  | yes      |                     |
-| `title`       | `string` | yes      |                     |
-| `description` | `text`   | yes      | 5 rows              |
-| `url`         | `url`    | yes      | `http`/`https` only |
-| `_createdAt`  | system   | auto     | Set by Sanity       |
+| Field        | Type     | Required | Notes               |
+| ------------ | -------- | -------- | ------------------- |
+| `img`        | `media`  | yes      |                     |
+| `title`      | `string` | yes      |                     |
+| `url`        | `url`    | yes      | `http`/`https` only |
+| `_createdAt` | system   | auto     | Set by Sanity       |
 
 A post is a link-out card: it has no slug and no page of its own.
 
@@ -267,6 +306,36 @@ them to whatever casing or language the frontend prints. A new singleton starts 
 | `postalCode`   | `string` | yes      |                                       |
 | `city`         | `string` | yes      |                                       |
 | `country`      | `string` | yes      |                                       |
+
+## `cookiesPrivacy` (singleton)
+
+Document id: `cookiesPrivacy`. See [Singletons](#singletons).
+
+| Field           | Type                               | Required | Notes                           |
+| --------------- | ---------------------------------- | -------- | ------------------------------- |
+| `effectiveDate` | `date`                             | yes      | `YYYY-MM-DD`                    |
+| `updatedDate`   | `date`                             | no       | Absent until the policy changes |
+| `body`          | `internationalizedArrayPolicyText` | yes      | Translated `policyText`         |
+
+```groq
+*[_id == "cookiesPrivacy"][0]{
+  effectiveDate,
+  updatedDate,
+  "body": coalesce(body[language == $lang][0].value, body[language == "en"][0].value)
+}
+```
+
+### `policyText` (array)
+
+Portable Text blocks limited to what the page renders:
+
+- **Styles**: `normal` (paragraph) and `h5` (heading). A heading belongs to the paragraph after it.
+- **Annotations**: `link` with a required `href` — `http`, `https`, `mailto`, `tel`, or a relative
+  site path such as `/contact`.
+- No decorators (bold, italic, …) and no lists.
+
+The current English text can be seeded with
+`npx sanity exec scripts/seedCookiesPrivacy.ts --with-user-token`.
 
 ## Querying
 

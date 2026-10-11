@@ -1,5 +1,6 @@
 import {defineArrayMember, defineField, defineType} from 'sanity'
 import {CaseIcon} from '@sanity/icons/Case'
+import {english, englishSource} from '../lib/localized'
 
 export const work = defineType({
   name: 'work',
@@ -10,20 +11,20 @@ export const work = defineType({
     defineField({
       name: 'title',
       title: 'Title',
-      type: 'string',
+      type: 'internationalizedArrayString',
       validation: (rule) => rule.required(),
     }),
     defineField({
       name: 'subtitle',
       title: 'Subtitle',
-      type: 'string',
+      type: 'internationalizedArrayString',
       validation: (rule) => rule.required(),
     }),
     defineField({
       name: 'slug',
       title: 'Slug',
       type: 'slug',
-      options: {source: 'title', maxLength: 96},
+      options: {source: englishSource('title'), maxLength: 96},
       validation: (rule) => rule.required(),
     }),
     defineField({
@@ -62,13 +63,13 @@ export const work = defineType({
         defineField({
           name: 'city',
           title: 'City',
-          type: 'string',
+          type: 'internationalizedArrayString',
           validation: (rule) => rule.required(),
         }),
         defineField({
           name: 'country',
           title: 'Country',
-          type: 'string',
+          type: 'internationalizedArrayString',
           validation: (rule) => rule.required(),
         }),
       ],
@@ -99,8 +100,7 @@ export const work = defineType({
     defineField({
       name: 'description',
       title: 'Description',
-      type: 'text',
-      rows: 8,
+      type: 'internationalizedArrayText',
       validation: (rule) => rule.required(),
     }),
   ],
@@ -115,10 +115,16 @@ export const work = defineType({
     select: {
       title: 'title',
       sector: 'sector.0.title',
+      featured: 'featured',
       media: 'img',
     },
-    prepare({title, sector, media}) {
-      return {title, subtitle: sector, media}
+    // A star marks featured works in lists
+    prepare({title, sector, featured, media}) {
+      return {
+        title: [featured && '★', english(title)].filter(Boolean).join(' '),
+        subtitle: [featured && 'Featured', english(sector)].filter(Boolean).join(' · '),
+        media,
+      }
     },
   },
 })

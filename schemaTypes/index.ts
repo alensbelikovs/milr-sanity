@@ -1,8 +1,10 @@
 import {address} from './objects/address'
 import {media} from './objects/media'
 import {openingHours} from './objects/openingHours'
+import {policyText} from './objects/policyText'
 import {socialLink} from './objects/socialLink'
 
+import {cookiesPrivacy} from './documents/cookiesPrivacy'
 import {sector} from './documents/sector'
 import {generalInformation} from './documents/generalInformation'
 import {post} from './documents/post'
@@ -18,9 +20,11 @@ export const schemaTypes = [
   sector,
   testimonial,
   generalInformation,
+  cookiesPrivacy,
   // Objects
   media,
   socialLink,
   openingHours,
   address,
+  policyText,
 ]

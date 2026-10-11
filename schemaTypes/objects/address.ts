@@ -1,5 +1,6 @@
 import {defineField, defineType} from 'sanity'
 import {PinIcon} from '@sanity/icons/Pin'
+import {english} from '../lib/localized'
 
 export const address = defineType({
   name: 'address',
@@ -29,13 +30,13 @@ export const address = defineType({
     defineField({
       name: 'city',
       title: 'City',
-      type: 'string',
+      type: 'internationalizedArrayString',
       validation: (rule) => rule.required(),
     }),
     defineField({
       name: 'country',
       title: 'Country',
-      type: 'string',
+      type: 'internationalizedArrayString',
       validation: (rule) => rule.required(),
     }),
   ],
@@ -51,7 +52,7 @@ export const address = defineType({
       const street = [streetName, streetNumber].filter(Boolean).join(' ')
       return {
         title: street || 'Address',
-        subtitle: [postalCode, city, country].filter(Boolean).join(', '),
+        subtitle: [postalCode, english(city), english(country)].filter(Boolean).join(', '),
       }
     },
   },

@@ -15,7 +15,7 @@ export const media = defineType({
     defineField({
       name: 'alt',
       title: 'Alternative text',
-      type: 'string',
+      type: 'internationalizedArrayString',
       description: 'Describes the image for screen readers and search engines.',
     }),
   ],

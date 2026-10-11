@@ -1,5 +1,6 @@
 import {defineArrayMember, defineField, defineType} from 'sanity'
 import {CogIcon} from '@sanity/icons/Cog'
+import {english} from '../lib/localized'
 
 /**
  * Site-wide details. A singleton: the Studio pins it to the document id
@@ -67,7 +68,7 @@ export const generalInformation = defineType({
     prepare({email, city, media}) {
       return {
         title: 'General information',
-        subtitle: [email, city].filter(Boolean).join(' - '),
+        subtitle: [email, english(city)].filter(Boolean).join(' - '),
         media,
       }
     },

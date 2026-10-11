@@ -1,5 +1,6 @@
 import {defineField, defineType} from 'sanity'
 import {CommentIcon} from '@sanity/icons/Comment'
+import {english} from '../lib/localized'
 
 export const testimonial = defineType({
   name: 'testimonial',
@@ -10,14 +11,14 @@ export const testimonial = defineType({
     defineField({
       name: 'author',
       title: 'Author',
-      type: 'string',
+      type: 'internationalizedArrayString',
       description: 'Who is speaking, e.g. "Karlis and Liga".',
       validation: (rule) => rule.required(),
     }),
     defineField({
       name: 'description',
       title: 'Description',
-      type: 'string',
+      type: 'internationalizedArrayString',
       description:
         'The clause that follows the author, e.g. "reflecting on their first summer in the house". Rendered as "{author}, {description}".',
       validation: (rule) => rule.required(),
@@ -25,8 +26,7 @@ export const testimonial = defineType({
     defineField({
       name: 'text',
       title: 'Text',
-      type: 'text',
-      rows: 5,
+      type: 'internationalizedArrayText',
       description: 'The quote itself.',
       validation: (rule) => rule.required(),
     }),
@@ -35,8 +35,8 @@ export const testimonial = defineType({
     select: {author: 'author', description: 'description', quote: 'text'},
     prepare({author, description, quote}) {
       return {
-        title: [author, description].filter(Boolean).join(', '),
-        subtitle: quote,
+        title: [english(author), english(description)].filter(Boolean).join(', '),
+        subtitle: english(quote),
       }
     },
   },

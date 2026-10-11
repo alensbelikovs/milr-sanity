@@ -1,8 +1,9 @@
 import type {StructureResolver} from 'sanity/structure'
 import {CogIcon} from '@sanity/icons/Cog'
+import {LockIcon} from '@sanity/icons/Lock'
 
 /** Document types that must exist exactly once, pinned to a fixed document id. */
-export const SINGLETONS = ['generalInformation']
+export const SINGLETONS = ['generalInformation', 'cookiesPrivacy']
 
 export const structure: StructureResolver = (S) =>
   S.list()
@@ -16,6 +17,15 @@ export const structure: StructureResolver = (S) =>
             .schemaType('generalInformation')
             .documentId('generalInformation')
             .title('General information'),
+        ),
+      S.listItem()
+        .title('Cookies & privacy')
+        .icon(LockIcon)
+        .child(
+          S.document()
+            .schemaType('cookiesPrivacy')
+            .documentId('cookiesPrivacy')
+            .title('Cookies & privacy'),
         ),
 
       S.divider(),

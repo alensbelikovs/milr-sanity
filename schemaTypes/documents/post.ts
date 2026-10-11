@@ -1,5 +1,6 @@
 import {defineField, defineType} from 'sanity'
 import {DocumentTextIcon} from '@sanity/icons/DocumentText'
+import {english} from '../lib/localized'
 
 export const post = defineType({
   name: 'post',
@@ -16,14 +17,7 @@ export const post = defineType({
     defineField({
       name: 'title',
       title: 'Title',
-      type: 'string',
-      validation: (rule) => rule.required(),
-    }),
-    defineField({
-      name: 'description',
-      title: 'Description',
-      type: 'text',
-      rows: 5,
+      type: 'internationalizedArrayString',
       validation: (rule) => rule.required(),
     }),
     defineField({
@@ -53,7 +47,7 @@ export const post = defineType({
   preview: {
     select: {title: 'title', createdAt: '_createdAt', media: 'img'},
     prepare({title, createdAt, media}) {
-      return {title, subtitle: createdAt?.slice(0, 10), media}
+      return {title: english(title), subtitle: createdAt?.slice(0, 10), media}
     },
   },
 })
